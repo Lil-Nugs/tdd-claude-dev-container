@@ -37,6 +37,9 @@ RUN chown -R claude:claude /workspace
 # Copy entrypoint script
 COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 
+# Copy mock claude script for testing
+COPY --chmod=755 mock-claude.sh /usr/local/bin/mock-claude
+
 # Switch to non-root user
 USER claude
 
