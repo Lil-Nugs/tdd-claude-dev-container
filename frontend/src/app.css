@@ -1,0 +1,112 @@
+:root {
+	--color-bg: #1a1a1a;
+	--color-bg-secondary: #2a2a2a;
+	--color-bg-tertiary: #3a3a3a;
+	--color-text: #f0f0f0;
+	--color-text-muted: #888888;
+	--color-primary: #6366f1;
+	--color-primary-hover: #818cf8;
+	--color-success: #22c55e;
+	--color-warning: #f59e0b;
+	--color-error: #ef4444;
+	--color-border: #404040;
+	--border-radius: 8px;
+	--spacing-xs: 0.25rem;
+	--spacing-sm: 0.5rem;
+	--spacing-md: 1rem;
+	--spacing-lg: 1.5rem;
+	--spacing-xl: 2rem;
+}
+
+* {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+html,
+body {
+	height: 100%;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+	background-color: var(--color-bg);
+	color: var(--color-text);
+}
+
+a {
+	color: var(--color-primary);
+	text-decoration: none;
+}
+
+a:hover {
+	color: var(--color-primary-hover);
+	text-decoration: underline;
+}
+
+button {
+	cursor: pointer;
+	border: none;
+	border-radius: var(--border-radius);
+	padding: var(--spacing-sm) var(--spacing-md);
+	font-size: 1rem;
+	font-weight: 500;
+	transition: background-color 0.2s, transform 0.1s;
+}
+
+button:active {
+	transform: scale(0.98);
+}
+
+.btn-primary {
+	background-color: var(--color-primary);
+	color: white;
+}
+
+.btn-primary:hover {
+	background-color: var(--color-primary-hover);
+}
+
+.btn-secondary {
+	background-color: var(--color-bg-tertiary);
+	color: var(--color-text);
+	border: 1px solid var(--color-border);
+}
+
+.btn-secondary:hover {
+	background-color: var(--color-border);
+}
+
+.card {
+	background-color: var(--color-bg-secondary);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius);
+	padding: var(--spacing-lg);
+}
+
+.status {
+	display: inline-block;
+	padding: var(--spacing-xs) var(--spacing-sm);
+	border-radius: 4px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.status.running {
+	background-color: rgba(34, 197, 94, 0.2);
+	color: var(--color-success);
+}
+
+.status.created {
+	background-color: rgba(99, 102, 241, 0.2);
+	color: var(--color-primary);
+}
+
+.status.exited {
+	background-color: rgba(136, 136, 136, 0.2);
+	color: var(--color-text-muted);
+}
+
+.status.error {
+	background-color: rgba(239, 68, 68, 0.2);
+	color: var(--color-error);
+}
