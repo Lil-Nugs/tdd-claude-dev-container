@@ -1,4 +1,7 @@
-"""WebSocket endpoint for terminal streaming."""
+"""WebSocket endpoint for terminal streaming.
+
+SECURITY: Validates commands and paths before execution.
+"""
 
 import asyncio
 import signal
@@ -6,7 +9,12 @@ from typing import Any
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from app.services.cli_runner import CLIRunner, ProcessState
+from app.services.cli_runner import (
+    CLIRunner,
+    CommandNotAllowedError,
+    InvalidWorkingDirectoryError,
+    ProcessState,
+)
 
 router = APIRouter()
 
@@ -97,12 +105,27 @@ async def terminal_websocket(websocket: WebSocket, session_id: str) -> None:
                             pass
                     await cli_runner.terminate_process(current_session)
 
-                # Spawn new process
-                current_session = await cli_runner.spawn_process(
-                    command=command,
-                    cwd=cwd,
-                    env=env,
-                )
+                # SECURITY: spawn_process validates command and cwd
+                try:
+                    current_session = await cli_runner.spawn_process(
+                        command=command,
+                        cwd=cwd,
+                        env=env,
+                    )
+                except CommandNotAllowedError as e:
+                    await websocket.send_json({
+                        "type": "status",
+                        "state": "error",
+                        "message": str(e),
+                    })
+                    continue
+                except InvalidWorkingDirectoryError as e:
+                    await websocket.send_json({
+                        "type": "status",
+                        "state": "error",
+                        "message": str(e),
+                    })
+                    continue
 
                 await websocket.send_json({
                     "type": "status",

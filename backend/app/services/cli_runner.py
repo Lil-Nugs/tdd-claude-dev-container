@@ -1,8 +1,12 @@
-"""PTY process management for terminal sessions."""
+"""PTY process management for terminal sessions.
+
+SECURITY: This module validates all commands and paths before execution.
+"""
 
 import asyncio
 import fcntl
 import os
+from pathlib import Path
 import pty
 import signal
 import struct
@@ -10,6 +14,108 @@ import termios
 import uuid
 from enum import Enum
 from typing import Any
+
+
+# =============================================================================
+# SECURITY: Command and Path Allowlists
+# =============================================================================
+
+ALLOWED_COMMANDS: frozenset[str] = frozenset({
+    "bash",
+    "sh",
+    "python",
+    "python3",
+    "node",
+    "npm",
+    "npx",
+    "bd",
+    "claude",
+    "git",
+    "make",
+    "pytest",
+    "ruff",
+    "mypy",
+    "pip",
+    "uv",
+})
+
+ALLOWED_BASE_PATHS: tuple[Path, ...] = (
+    Path("/home"),
+    Path("/tmp"),
+    Path("/projects"),
+    Path("/workspace"),
+)
+
+
+class CommandNotAllowedError(Exception):
+    """Raised when a command is not in the allowlist."""
+
+    def __init__(self, command: str, allowed: frozenset[str]):
+        self.command = command
+        self.allowed = allowed
+        super().__init__(
+            f"Command '{command}' is not allowed. "
+            f"Allowed: {', '.join(sorted(allowed))}"
+        )
+
+
+class InvalidWorkingDirectoryError(Exception):
+    """Raised when cwd is outside allowed directories."""
+
+    def __init__(self, cwd: str, allowed: tuple[Path, ...]):
+        self.cwd = cwd
+        self.allowed = allowed
+        super().__init__(
+            f"Working directory '{cwd}' is not in an allowed location. "
+            f"Allowed: {[str(p) for p in allowed]}"
+        )
+
+
+def validate_command(command: list[str]) -> None:
+    """Validate command against allowlist.
+
+    Args:
+        command: Command and arguments.
+
+    Raises:
+        CommandNotAllowedError: If command is not allowed.
+        ValueError: If command is empty.
+    """
+    if not command:
+        raise ValueError("Command cannot be empty")
+
+    # Extract executable name (handle full paths like /bin/bash)
+    executable = Path(command[0]).name
+
+    if executable not in ALLOWED_COMMANDS:
+        raise CommandNotAllowedError(executable, ALLOWED_COMMANDS)
+
+
+def validate_working_directory(cwd: str) -> Path:
+    """Validate and resolve working directory.
+
+    Args:
+        cwd: Working directory path.
+
+    Returns:
+        Resolved Path object.
+
+    Raises:
+        InvalidWorkingDirectoryError: If cwd is outside allowed paths.
+    """
+    try:
+        resolved = Path(cwd).resolve()
+    except (ValueError, RuntimeError) as e:
+        raise InvalidWorkingDirectoryError(cwd, ALLOWED_BASE_PATHS) from e
+
+    for allowed_base in ALLOWED_BASE_PATHS:
+        try:
+            resolved.relative_to(allowed_base)
+            return resolved
+        except ValueError:
+            continue
+
+    raise InvalidWorkingDirectoryError(cwd, ALLOWED_BASE_PATHS)
 
 
 class ProcessState(Enum):
@@ -65,6 +171,8 @@ class CLIRunner:
     ) -> str:
         """Spawn a new process with PTY.
 
+        SECURITY: Validates command and cwd before execution.
+
         Args:
             command: Command and arguments to execute.
             cwd: Working directory for the process.
@@ -72,7 +180,19 @@ class CLIRunner:
 
         Returns:
             Session ID for the process.
+
+        Raises:
+            CommandNotAllowedError: If command is not in allowlist.
+            InvalidWorkingDirectoryError: If cwd is outside allowed paths.
         """
+        # SECURITY: Validate command before execution
+        validate_command(command)
+
+        # SECURITY: Validate cwd if provided
+        validated_cwd: Path | None = None
+        if cwd:
+            validated_cwd = validate_working_directory(cwd)
+
         session_id = str(uuid.uuid4())
 
         # Prepare environment
@@ -85,8 +205,8 @@ class CLIRunner:
 
         if pid == 0:
             # Child process
-            if cwd:
-                os.chdir(cwd)
+            if validated_cwd:
+                os.chdir(validated_cwd)
             os.execvpe(command[0], command, process_env)
         else:
             # Parent process
