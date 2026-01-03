@@ -3,30 +3,48 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "claude-dev-container-backend"
+name = "tdd-claude-dev-container-backend"
 version = "0.1.0"
-description = "Backend API for Claude Code Remote Control PWA"
+description = "FastAPI backend for TDD Claude Dev Container"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "fastapi>=0.104.0",
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
     "pydantic>=2.5.0",
-    "uvicorn[standard]>=0.24.0",
+    "pydantic-settings>=2.1.0",
+    "docker>=7.0.0",
+    "sqlmodel>=0.0.14",
+    "websockets>=12.0",
+    "aiosqlite>=0.19.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
-    "pytest-asyncio>=0.21.0",
-    "httpx>=0.25.0",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.26.0",
+    "testcontainers>=3.7.0",
+    "mypy>=1.8.0",
+    "ruff>=0.1.0",
 ]
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-python_classes = ["Test*"]
 python_functions = ["test_*"]
-asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true

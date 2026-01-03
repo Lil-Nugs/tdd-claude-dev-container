@@ -1,1 +1,1 @@
-# App package
+"""TDD Claude Dev Container Backend."""
