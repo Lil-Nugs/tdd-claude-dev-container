@@ -1,4 +1,4 @@
-import type { Project, CreateProject, Container, ApiError } from '$lib/types/api';
+import type { Project, CreateProject, Container, ErrorResponse } from '$lib/types/api';
 
 const API_BASE = '/api';
 
@@ -15,8 +15,8 @@ class ApiClient {
 		if (!res.ok) {
 			let detail = `HTTP ${res.status}`;
 			try {
-				const error: ApiError = await res.json();
-				detail = error.detail || detail;
+				const error: ErrorResponse = await res.json();
+				detail = error.message || detail;
 			} catch {
 				// Use status text if JSON parsing fails
 				detail = res.statusText || detail;

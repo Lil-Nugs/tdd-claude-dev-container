@@ -3,7 +3,7 @@
 	import { FitAddon } from 'xterm-addon-fit';
 	import { WebLinksAddon } from 'xterm-addon-web-links';
 	import { onMount, onDestroy } from 'svelte';
-	import type { TerminalMessage, TerminalCommand, ProcessState } from '$lib/types/api';
+	import type { TerminalMessage, TerminalCommand, ContainerStatus } from '$lib/types/api';
 	import 'xterm/css/xterm.css';
 
 	export let containerId: string;
@@ -12,7 +12,7 @@
 	let terminal: Terminal;
 	let fitAddon: FitAddon;
 	let ws: WebSocket | null = null;
-	let status: ProcessState = 'running';
+	let status: ContainerStatus = 'running';
 
 	function connect() {
 		const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -28,8 +28,17 @@
 				const msg: TerminalMessage = JSON.parse(event.data);
 				if (msg.type === 'output' && msg.data) {
 					terminal.write(msg.data);
-				} else if (msg.type === 'status' && msg.state) {
-					status = msg.state;
+				} else if (msg.type === 'system' && msg.data) {
+					// System messages may contain status updates
+					try {
+						const systemData = JSON.parse(msg.data);
+						if (systemData.status) {
+							status = systemData.status as ContainerStatus;
+						}
+					} catch {
+						// Plain system message, display it
+						terminal.writeln(`\r\n\x1b[36m${msg.data}\x1b[0m`);
+					}
 				} else if (msg.type === 'error' && msg.data) {
 					terminal.writeln(`\r\n\x1b[31mError: ${msg.data}\x1b[0m`);
 					status = 'error';
@@ -62,8 +71,7 @@
 			fitAddon.fit();
 			sendCommand({
 				type: 'resize',
-				cols: terminal.cols,
-				rows: terminal.rows
+				data: JSON.stringify({ cols: terminal.cols, rows: terminal.rows })
 			});
 		}
 	}

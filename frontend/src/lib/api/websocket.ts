@@ -95,7 +95,7 @@ export class TerminalWebSocket {
 	}
 
 	sendResize(cols: number, rows: number): void {
-		this.send({ type: 'resize', cols, rows });
+		this.send({ type: 'resize', data: JSON.stringify({ cols, rows }) });
 	}
 
 	disconnect(): void {
