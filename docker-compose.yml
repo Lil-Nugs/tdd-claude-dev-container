@@ -1,0 +1,45 @@
+# docker-compose.yml
+# Development compose file for TDD Claude project
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - PROJECTS_ROOT=/projects
+      - DATABASE_URL=sqlite:///data/app.db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://backend:8000
+    depends_on:
+      - backend
+
+  # Test container with mock Claude
+  claude-test:
+    build:
+      context: ./docker/claude-cli
+      dockerfile: Dockerfile
+    volumes:
+      - ./docker/claude-cli/mock-claude.sh:/usr/local/bin/claude:ro
+    command: ["tail", "-f", "/dev/null"]
