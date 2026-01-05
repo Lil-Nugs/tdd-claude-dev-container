@@ -5,6 +5,7 @@ export default defineConfig({
 	plugins: [sveltekit()],
 	server: {
 		port: 5173,
+		allowedHosts: ['minipc'],
 		proxy: {
 			'/api': {
 				target: 'http://localhost:8000',
