@@ -13,7 +13,7 @@ import pytest
 from datetime import datetime
 from pydantic import ValidationError
 
-from backend.app.models.contracts import (
+from app.models.contracts import (
     # Enums
     ContainerStatus,
     WorkflowStatus,

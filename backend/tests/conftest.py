@@ -1,7 +1,13 @@
 """Pytest configuration and fixtures."""
 
 import os
+import sys
 import tempfile
+
+# Add parent directory to path for imports
+# This allows imports like `from app.xxx import yyy`
+_backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _backend_dir)
 
 import pytest
 from httpx import ASGITransport, AsyncClient
